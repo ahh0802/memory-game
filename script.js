@@ -1,9 +1,20 @@
 const grid = document.getElementById('grid');
 const movesDisplay = document.getElementById('moves');
+const bestScoreDisplay = document.getElementById('best-score');
 const restartBtn = document.getElementById('restart-btn');
 
-// لیست ایموجی کارت‌ها (۴ جفت)
-let cardsArray = [
+let moves = 0;
+let hasFlippedCard = false;
+let lockBoard = false;
+let firstCard, secondCard;
+let matchesCount = 0;
+
+// خواندن بهترین رکورد از localStorage در شروع بازی
+let bestScore = localStorage.getItem('memoryBestScore') || '-';
+bestScoreDisplay.textContent = bestScore;
+
+// لیست کارت‌ها (۴ جفت)
+const cardsArray = [
     { name: 'apple', img: '🍎' },
     { name: 'apple', img: '🍎' },
     { name: 'banana', img: '🍌' },
@@ -14,98 +25,110 @@ let cardsArray = [
     { name: 'grape', img: '🍇' },
 ];
 
-let flippedCards = [];
-let matchedPairs = 0;
-let moves = 0;
-
 // به هم ریختن تصادفی کارت‌ها در شروع بازی
-function shuffleAndStart() {
-    cardsArray.sort(() => 0.5 - Math.random());
-    grid.innerHTML = '';
-    matchedPairs = 0;
-    moves = 0;
-    movesDisplay.textContent = moves;
-    flippedCards = [];
-    createBoard();
-}
+cardsArray.sort(() => 0.5 - Math.random());
 
-// ساخت کارت‌ها روی صفحه
+// ساخت صفحه بازی
 function createBoard() {
-    cardsArray.forEach((item, index) => {
+    grid.innerHTML = '';
+    cardsArray.forEach(item => {
         const card = document.createElement('div');
         card.classList.add('card');
-        card.dataset.id = index;
-        card.addEventListener('click', flipCard);
-        
-        // استایل‌های پایه برای ظاهر کارت
-        card.style.width = '80px';
-        card.style.height = '80px';
-        card.style.backgroundColor = '#0f3460';
-        card.style.borderRadius = '10px';
-        card.style.display = 'flex';
-        card.style.justifyContent = 'center';
-        card.style.alignItems = 'center';
-        card.style.fontSize = '35px';
-        card.style.cursor = 'pointer';
-        card.style.transition = '0.3s';
+        card.dataset.name = item.name;
 
+        const cardInner = document.createElement('div');
+        cardInner.classList.add('card-inner');
+
+        const cardFront = document.createElement('div');
+        cardFront.classList.add('card-front');
+        cardFront.textContent = '❓';
+
+        const cardBack = document.createElement('div');
+        cardBack.classList.add('card-back');
+        cardBack.textContent = item.img;
+
+        cardInner.appendChild(cardFront);
+        cardInner.appendChild(cardBack);
+        card.appendChild(cardInner);
+
+        card.addEventListener('click', flipCard);
         grid.appendChild(card);
     });
 }
 
-// منطق برگشتن کارت
 function flipCard() {
-    const selectedCard = this;
-    const cardId = selectedCard.dataset.id;
+    if (lockBoard) return;
+    if (this === firstCard) return;
 
-    // اگر کارت قبلاً باز شده یا دو کارت باز است، کاری نکن
-    if (flippedCards.length < 2 && !selectedCard.classList.contains('flipped')) {
-        selectedCard.classList.add('flipped');
-        selectedCard.textContent = cardsArray[cardId].img;
-        selectedCard.style.backgroundColor = '#e94560';
-        
-        flippedCards.push({ id: cardId, name: cardsArray[cardId].name, element: selectedCard });
+    this.classList.add('flip');
 
-        if (flippedCards.length === 2) {
-            moves++;
-            movesDisplay.textContent = moves;
-            checkForMatch();
-        }
+    if (!hasFlippedCard) {
+        hasFlippedCard = true;
+        firstCard = this;
+        return;
     }
+
+    secondCard = this;
+    moves++;
+    movesDisplay.textContent = moves;
+    checkForMatch();
 }
 
-// بررسی تطابق دو کارت
 function checkForMatch() {
-    const [firstCard, secondCard] = flippedCards;
+    let isMatch = firstCard.dataset.name === secondCard.dataset.name;
 
-    if (firstCard.name === secondCard.name) {
-        // اگر کارت‌ها یکی بودند
-        matchedPairs++;
-        flippedCards = [];
-
-        if (matchedPairs === cardsArray.length / 2) {
+    if (isMatch) {
+        disableCards();
+        matchesCount++;
+        // بررسی پایان بازی (۴ جفت)
+        if (matchesCount === 4) {
             setTimeout(() => {
-                alert(`آفرین! شما بازی را با ${moves} حرکت به اتمام رساندید! 🎉`);
+                alert(`آفرین! بازی تمام شد با ${moves} حرکت 🎉`);
+                checkAndSaveBestScore();
             }, 300);
         }
     } else {
-        // اگر کارت‌ها یکی نبودند، بعد از نیم ثانیه برگردند
-        setTimeout(() => {
-            firstCard.element.classList.remove('flipped');
-            firstCard.element.textContent = '';
-            firstCard.element.style.backgroundColor = '#0f3460';
-
-            secondCard.element.classList.remove('flipped');
-            secondCard.element.textContent = '';
-            secondCard.element.style.backgroundColor = '#0f3460';
-
-            flippedCards = [];
-        }, 600);
+        unflipCards();
     }
 }
 
-// رویداد دکمه ری‌استارت
-restartBtn.addEventListener('click', shuffleAndStart);
+function disableCards() {
+    firstCard.removeEventListener('click', flipCard);
+    secondCard.removeEventListener('click', flipCard);
+    resetBoard();
+}
 
-// اجرای اولیه بازی هنگام لود صفحه
-shuffleAndStart();
+function unflipCards() {
+    lockBoard = true;
+    setTimeout(() => {
+        firstCard.classList.remove('flip');
+        secondCard.classList.remove('flip');
+        resetBoard();
+    }, 1000);
+}
+
+function resetBoard() {
+    [hasFlippedCard, lockBoard] = [false, false];
+    [firstCard, secondCard] = [null, null];
+}
+
+// بررسی و ذخیره بهترین رکورد
+function checkAndSaveBestScore() {
+    if (bestScore === '-' || moves < parseInt(bestScore)) {
+        bestScore = moves;
+        localStorage.setItem('memoryBestScore', bestScore);
+        bestScoreDisplay.textContent = bestScore;
+    }
+}
+
+// دکمه شروع مجدد
+restartBtn.addEventListener('click', () => {
+    moves = 0;
+    matchesCount = 0;
+    movesDisplay.textContent = moves;
+    cardsArray.sort(() => 0.5 - Math.random());
+    createBoard();
+});
+
+// راه‌اندازی اولیه بازی
+createBoard();
