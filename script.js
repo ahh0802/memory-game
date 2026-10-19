@@ -96,3 +96,17 @@ function checkForMatch() {
 }
 
 createBoard();
+// تابع ری‌استارت و شروع مجدد بازی
+const restartBtn = document.getElementById('restart-btn');
+
+restartBtn.addEventListener('click', () => {
+    grid.innerHTML = '';
+    cardArray.sort(() => 0.5 - Math.random());
+    cardsChosen = [];
+    cardsChosenId = [];
+    cardsWon = [];
+    moves = 0;
+    movesDisplay.textContent = moves;
+    createBoard();
+});
+
