@@ -1,8 +1,9 @@
 const grid = document.getElementById('grid');
 const movesDisplay = document.getElementById('moves');
+const restartBtn = document.getElementById('restart-btn');
 
 // لیست ایموجی کارت‌ها (۴ جفت)
-const cardsArray = [
+let cardsArray = [
     { name: 'apple', img: '🍎' },
     { name: 'apple', img: '🍎' },
     { name: 'banana', img: '🍌' },
@@ -13,12 +14,20 @@ const cardsArray = [
     { name: 'grape', img: '🍇' },
 ];
 
-// به هم ریختن تصادفی کارت‌ها در شروع بازی
-cardsArray.sort(() => 0.5 - Math.random());
-
 let flippedCards = [];
 let matchedPairs = 0;
 let moves = 0;
+
+// به هم ریختن تصادفی کارت‌ها در شروع بازی
+function shuffleAndStart() {
+    cardsArray.sort(() => 0.5 - Math.random());
+    grid.innerHTML = '';
+    matchedPairs = 0;
+    moves = 0;
+    movesDisplay.textContent = moves;
+    flippedCards = [];
+    createBoard();
+}
 
 // ساخت کارت‌ها روی صفحه
 function createBoard() {
@@ -95,17 +104,8 @@ function checkForMatch() {
     }
 }
 
-// تابع ری‌استارت و شروع مجدد بازی
-const restartBtn = document.getElementById('restart-btn');
+// رویداد دکمه ری‌استارت
+restartBtn.addEventListener('click', shuffleAndStart);
 
-restartBtn.addEventListener('click', () => {
-    grid.innerHTML = '';
-    cardArray.sort(() => 0.5 - Math.random());
-    cardsChosen = [];
-    cardsChosenId = [];
-    cardsWon = [];
-    moves = 0;
-    movesDisplay.textContent = moves;
-    createBoard();
-});
-
+// اجرای اولیه بازی هنگام لود صفحه
+shuffleAndStart();
