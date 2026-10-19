@@ -95,7 +95,6 @@ function checkForMatch() {
     }
 }
 
-createBoard();
 // تابع ری‌استارت و شروع مجدد بازی
 const restartBtn = document.getElementById('restart-btn');
 
