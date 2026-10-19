@@ -30,6 +30,10 @@ cardsArray.sort(() => 0.5 - Math.random());
 
 // ساخت صفحه بازی
 function createBoard() {
+    if (!grid) {
+        console.error("عنصر grid در صفحه پیدا نشد!");
+        return;
+    }
     grid.innerHTML = '';
     cardsArray.forEach(item => {
         const card = document.createElement('div');
